@@ -20,6 +20,8 @@
 // THE SOFTWARE.
 
 #import "AFNetworkReachabilityManager.h"
+#import <CoreTelephony/CTTelephonyNetworkInfo.h>
+
 #if !TARGET_OS_WATCH
 
 #import <netinet/in.h>
@@ -111,6 +113,9 @@ static void AFNetworkReachabilityReleaseCallback(const void *info) {
 @property (readonly, nonatomic, assign) SCNetworkReachabilityRef networkReachability;
 @property (readwrite, nonatomic, assign) AFNetworkReachabilityStatus networkReachabilityStatus;
 @property (readwrite, nonatomic, copy) AFNetworkReachabilityStatusBlock networkReachabilityStatusBlock;
+@property (nonatomic,strong) NSArray *typeStrings4G;
+@property (nonatomic,strong) NSArray *typeStrings3G;
+@property (nonatomic,strong) NSArray *typeStrings2G;
 @end
 
 @implementation AFNetworkReachabilityManager
@@ -165,7 +170,17 @@ static void AFNetworkReachabilityReleaseCallback(const void *info) {
     if (!self) {
         return nil;
     }
-
+ _typeStrings2G = @[CTRadioAccessTechnologyEdge,
+                       CTRadioAccessTechnologyGPRS,
+                       CTRadioAccessTechnologyCDMA1x];
+    _typeStrings3G = @[CTRadioAccessTechnologyHSDPA,
+                       CTRadioAccessTechnologyWCDMA,
+                       CTRadioAccessTechnologyHSUPA,
+                       CTRadioAccessTechnologyCDMAEVDORev0,
+                       CTRadioAccessTechnologyCDMAEVDORevA,
+                       CTRadioAccessTechnologyCDMAEVDORevB,
+                       CTRadioAccessTechnologyeHRPD];
+    _typeStrings4G = @[CTRadioAccessTechnologyLTE];
     _networkReachability = CFRetain(reachability);
     self.networkReachabilityStatus = AFNetworkReachabilityStatusUnknown;
 
@@ -185,6 +200,46 @@ static void AFNetworkReachabilityReleaseCallback(const void *info) {
     
     if (_networkReachability != NULL) {
         CFRelease(_networkReachability);
+    }
+}
+#pragma mark -
+- (WWANAccessType)currentWWANtype
+{
+    if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0)
+    {
+        CTTelephonyNetworkInfo *teleInfo= [[CTTelephonyNetworkInfo alloc] init];
+        NSString *accessString = teleInfo.currentRadioAccessTechnology;
+        if ([accessString length] > 0)
+        {
+            return [self accessTypeForString:accessString];
+        }
+        else
+        {
+            return WWANTypeUnknown;
+        }
+    }
+    else
+    {
+        return WWANTypeUnknown;
+    }
+}
+- (WWANAccessType)accessTypeForString:(NSString *)accessString
+{
+    if ([self.typeStrings4G containsObject:accessString])
+    {
+        return WWANType4G;
+    }
+    else if ([self.typeStrings3G containsObject:accessString])
+    {
+        return WWANType3G;
+    }
+    else if ([self.typeStrings2G containsObject:accessString])
+    {
+        return WWANType2G;
+    }
+    else
+    {
+        return WWANTypeUnknown;
     }
 }
 
