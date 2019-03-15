@@ -31,6 +31,14 @@ typedef NS_ENUM(NSInteger, AFNetworkReachabilityStatus) {
     AFNetworkReachabilityStatusReachableViaWiFi = 2,
 };
 
+
+typedef NS_ENUM(NSInteger, WWANAccessType) {
+    WWANTypeUnknown = -1, /// maybe iOS6
+    WWANType4G = 0,
+    WWANType3G = 1,
+    WWANType2G = 3
+};
+
 NS_ASSUME_NONNULL_BEGIN
 
 /**
@@ -43,6 +51,9 @@ NS_ASSUME_NONNULL_BEGIN
  @warning Instances of `AFNetworkReachabilityManager` must be started with `-startMonitoring` before reachability status can be determined.
  */
 @interface AFNetworkReachabilityManager : NSObject
+    
+- (WWANAccessType)currentWWANtype;
+
 
 /**
  The current network reachability status.
